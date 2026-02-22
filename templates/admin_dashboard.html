@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% block title %}Panel Admin — RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- TOP BAR -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold);">⚙ PANEL DE ADMINISTRACIÓN</h1>
+      <p style="color:var(--text3);font-size:.82rem;margin-top:.2rem;">Conectado como <span style="color:var(--gold3);font-weight:700;">{{ admin_username }}</span></p>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="openModal('modalEvent')">＋ EVENTO</button>
+      <a href="/admin/seasons" class="btn btn-outline btn-sm">🏆 TEMPORADAS</a>
+      <a href="/admin/export_ranking" class="btn btn-neon btn-sm">📥 EXPORTAR CSV</a>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid grid-4" style="margin-bottom:1.5rem;">
+    <div class="stat-card fade-up"><div class="stat-number">{{ total_users }}</div><div class="stat-label">Jugadores</div></div>
+    <div class="stat-card fade-up" style="animation-delay:.04s;"><div class="stat-number">{{ total_events }}</div><div class="stat-label">Eventos</div></div>
+    <div class="stat-card fade-up" style="animation-delay:.08s;"><div class="stat-number" style="font-size:1.4rem;">{{ total_points }}</div><div class="stat-label">Puntos Dados</div></div>
+    <div class="stat-card fade-up" style="animation-delay:.12s;">
+      {% if top3 %}
+      <div style="font-size:.72rem;color:var(--text3);letter-spacing:.1em;margin-bottom:.3rem;">LÍDER</div>
+      <div style="font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);font-size:.95rem;">{{ top3[0].username }}</div>
+      <div style="color:var(--text3);font-size:.78rem;">{{ top3[0].total_points }} pts</div>
+      {% else %}<div class="stat-label">Sin jugadores</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <!-- LEFT -->
+    <div>
+      <!-- SEARCH & POINTS -->
+      <div class="panel">
+        <div class="panel-title">🔍 BUSCAR JUGADOR Y AGREGAR PUNTOS</div>
+        <div style="position:relative;">
+          <input type="text" id="searchInput" placeholder="Usuario, Minecraft nick o Discord..." autocomplete="off" style="padding-left:2.5rem;">
+          <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;">🔍</span>
+        </div>
+        <div id="searchResults" style="display:none;border:1px solid var(--border2);border-radius:6px;margin-top:.4rem;max-height:220px;overflow-y:auto;background:var(--panel2);"></div>
+
+        <div id="selectedUser" style="display:none;margin-top:1.2rem;">
+          <div style="background:rgba(240,192,64,.04);border:1px solid var(--border2);border-radius:6px;padding:1.1rem;margin-bottom:.75rem;">
+            <div id="selectedUserInfo"></div>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:.9rem 0;"></div>
+            <div class="form-group">
+              <label>Evento (opcional)</label>
+              <select id="eventSelect">
+                <option value="">— Sin evento —</option>
+                {% for e in events %}<option value="{{ e.id }}">{{ e.name }} · {{ e.event_date }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="grid grid-2" style="gap:.75rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Posición <span style="color:var(--text3);">(auto-pts)</span></label>
+                <input type="number" id="positionInput" min="1" max="128" placeholder="1—128">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Puntos *</label>
+                <input type="number" id="pointsInput" min="1" placeholder="25">
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:.75rem;">
+              <label>Razón / Nota</label>
+              <input type="text" id="reasonInput" placeholder="Ej: Ganador torneo PvP">
+            </div>
+            <button class="btn btn-green" onclick="addPoints()" style="width:100%;justify-content:center;">✅ AGREGAR PUNTOS</button>
+            <div id="addPointsResult" style="margin-top:.5rem;"></div>
+          </div>
+          <button class="btn btn-outline" onclick="viewUserLogs()" style="width:100%;justify-content:center;margin-bottom:.4rem;">📜 VER HISTORIAL COMPLETO</button>
+          <button class="btn btn-red btn-sm" onclick="deleteUser()" style="width:100%;justify-content:center;">🗑 ELIMINAR USUARIO</button>
+        </div>
+      </div>
+
+      <!-- BULK -->
+      <div class="panel">
+        <div class="panel-title">⚡ ASIGNACIÓN MASIVA — ESCALA AUTO</div>
+        <p style="color:var(--text3);font-size:.82rem;margin-bottom:.9rem;line-height:1.5;">Formato: <code style="color:var(--neon);">posición,nick_minecraft</code> — una por línea.</p>
+        <div class="form-group">
+          <label>Evento *</label>
+          <select id="bulkEventSelect">
+            <option value="">— Selecciona evento —</option>
+            {% for e in events %}<option value="{{ e.id }}">{{ e.name }} · {{ e.event_date }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Resultados</label>
+          <textarea id="bulkText" rows="7" placeholder="1,Steve&#10;2,Alex&#10;3,Notch&#10;4,Herobrine"></textarea>
+        </div>
+        <div style="display:flex;gap:.6rem;">
+          <button class="btn btn-outline btn-sm" onclick="openModal('modalOCR')" style="flex:1;justify-content:center;">📷 OCR IMAGEN</button>
+          <button class="btn btn-green" onclick="processBulk()" style="flex:1;justify-content:center;">⚡ PROCESAR</button>
+        </div>
+        <div id="bulkResult" style="margin-top:.9rem;"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <!-- ACTIVITY -->
+      <div class="panel">
+        <div class="panel-title">📋 ACTIVIDAD RECIENTE</div>
+        <div style="max-height:340px;overflow-y:auto;">
+          {% if recent_logs %}{% for log in recent_logs %}
+          <div class="log-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.15rem;">
+              <div><strong style="font-size:.92rem;">{{ log.username }}</strong><span style="color:var(--text3);font-size:.75rem;margin-left:.4rem;">⛏ {{ log.minecraft_nick }}</span></div>
+              <span class="log-pts">+{{ log.points }}</span>
+            </div>
+            {% if log.event_name %}<div style="font-size:.8rem;color:var(--gold3);">🏆 {{ log.event_name }}{% if log.position %} · #{{ log.position }}{% endif %}</div>{% endif %}
+            <div style="font-size:.72rem;color:var(--text3);">{{ log.added_by }} · {{ log.added_at[:16] if log.added_at else '' }}</div>
+          </div>
+          {% endfor %}{% else %}
+          <div style="text-align:center;color:var(--text3);padding:2rem;font-size:.85rem;">Sin actividad reciente</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- EVENTS -->
+      <div class="panel">
+        <div class="panel-title">🗓 EVENTOS</div>
+        <div style="max-height:260px;overflow-y:auto;">
+          {% if events %}{% for e in events[:15] %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-weight:600;font-size:.88rem;">{{ e.name }}</div>
+              <div style="font-size:.72rem;color:var(--text3);">{{ e.event_date }} · {{ e.created_by }}</div>
+            </div>
+            <span class="badge badge-gold">ID {{ e.id }}</span>
+          </div>
+          {% endfor %}{% else %}
+          <div style="text-align:center;color:var(--text3);padding:1.5rem;font-size:.85rem;">Sin eventos</div>
+          {% endif %}
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openModal('modalEvent')" style="margin-top:1rem;width:100%;justify-content:center;">＋ CREAR EVENTO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Evento -->
+<div class="modal-overlay" id="modalEvent">
+  <div class="modal">
+    <div class="modal-title">🗓 CREAR EVENTO</div>
+    <div class="form-group"><label>Nombre *</label><input type="text" id="eventName" placeholder="Torneo PvP — Semana 1"></div>
+    <div class="form-group"><label>Fecha *</label><input type="date" id="eventDate"></div>
+    <div class="form-group"><label>Descripción</label><textarea id="eventDesc" rows="2" placeholder="Descripción opcional..."></textarea></div>
+    <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalEvent')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-gold" onclick="createEvent()" style="flex:1;justify-content:center;">CREAR →</button>
+    </div>
+    <div id="eventResult" style="margin-top:.5rem;"></div>
+  </div>
+</div>
+
+<!-- MODAL: Logs usuario -->
+<div class="modal-overlay" id="modalUserLogs">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-title" id="modalLogsTitle">HISTORIAL DEL JUGADOR</div>
+    <div id="modalLogsContent"></div>
+    <button class="btn btn-outline" onclick="closeModal('modalUserLogs')" style="margin-top:1rem;width:100%;justify-content:center;">CERRAR</button>
+  </div>
+</div>
+
+<!-- MODAL: OCR -->
+<div class="modal-overlay" id="modalOCR">
+  <div class="modal">
+    <div class="modal-title">📷 OCR — EXTRAER DE IMAGEN</div>
+    <p style="color:var(--text3);font-size:.83rem;margin-bottom:1rem;line-height:1.5;">Sube una captura del ranking. Se detectarán posiciones y nicks automáticamente.<br><span style="color:var(--gold3);">Requiere Tesseract-OCR instalado.</span></p>
+    <div class="form-group"><label>Imagen</label><input type="file" id="ocrFile" accept="image/*"></div>
+    <button class="btn btn-neon" onclick="processOCR()" style="width:100%;justify-content:center;">🔍 ANALIZAR</button>
+    <div id="ocrResult" style="margin-top:.6rem;"></div>
+    <div id="ocrParsed" style="margin-top:.4rem;"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalOCR')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-green" id="btnApplyOCR" onclick="applyOCRResults()" style="flex:1;justify-content:center;display:none;">✅ APLICAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedUserId=null,ocrParsedResults=[];
+const SCALE={};
+for(let i=1;i<=128;i++){if(i===1)SCALE[i]=25;else if(i===2)SCALE[i]=15;else if(i===3)SCALE[i]=12;else if(i===4)SCALE[i]=10;else if(i<=8)SCALE[i]=5;else if(i<=15)SCALE[i]=4;else if(i<=31)SCALE[i]=3;else if(i<=64)SCALE[i]=2;else SCALE[i]=1;}
+
+let st;
+document.getElementById('searchInput').addEventListener('input',function(){
+  clearTimeout(st);const q=this.value.trim();
+  if(q.length<2){document.getElementById('searchResults').style.display='none';return;}
+  st=setTimeout(()=>doSearch(q),280);
+});
+
+async function doSearch(q){
+  const res=await fetch('/admin/search_user?q='+encodeURIComponent(q));
+  const data=await res.json();
+  const box=document.getElementById('searchResults');
+  if(!data.length){box.innerHTML='<div style="padding:1rem;text-align:center;color:var(--text3);font-size:.85rem;">Sin resultados</div>';box.style.display='block';return;}
+  box.innerHTML=data.map(u=>`<div class="search-result-item" onclick="selectUser(${u.id},'${u.username}','${u.minecraft_nick}','${u.discord}',${u.total_points},${u.season_points})">
+    <div><strong>${u.username}</strong><span style="color:var(--text3);font-size:.78rem;margin-left:.4rem;">⛏ ${u.minecraft_nick}</span><br><span style="color:var(--text3);font-size:.75rem;">📱 ${u.discord}</span></div>
+    <span class="badge badge-gold">${u.total_points} pts</span></div>`).join('');
+  box.style.display='block';
+}
+
+function selectUser(id,username,mc,discord,pts,spts){
+  selectedUserId=id;
+  document.getElementById('searchInput').value=username;
+  document.getElementById('searchResults').style.display='none';
+  document.getElementById('selectedUser').style.display='block';
+  document.getElementById('selectedUserInfo').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-family:'Orbitron',sans-serif;font-weight:900;font-size:.95rem;">${username}</div>
+      <div style="font-size:.8rem;color:var(--text3);margin-top:.2rem;">⛏ <span class="mc-nick">${mc}</span> &nbsp; 📱 <span class="badge badge-purple">${discord}</span></div></div>
+      <div style="text-align:right;"><div class="pts-display" style="font-size:1.15rem;">${pts}</div><div style="color:var(--text3);font-size:.68rem;letter-spacing:.1em;">TOTAL PTS</div></div>
+    </div>`;
+}
+
+document.getElementById('positionInput').addEventListener('input',function(){
+  const p=parseInt(this.value);if(p>=1&&p<=128)document.getElementById('pointsInput').value=SCALE[p]||0;
+});
+
+async function addPoints(){
+  if(!selectedUserId){alert('Selecciona un usuario');return;}
+  const points=parseInt(document.getElementById('pointsInput').value);
+  if(!points||points<=0){alert('Ingresa puntos válidos');return;}
+  const body={user_id:selectedUserId,points,event_id:document.getElementById('eventSelect').value||null,position:document.getElementById('positionInput').value||null,reason:document.getElementById('reasonInput').value};
+  const res=await fetch('/admin/add_points',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  const el=document.getElementById('addPointsResult');
+  if(data.success){el.innerHTML=`<div class="alert alert-success">✅ +${points} pts agregados. Total: <strong>${data.new_total}</strong></div>`;document.getElementById('pointsInput').value='';document.getElementById('positionInput').value='';document.getElementById('reasonInput').value='';}
+  else{el.innerHTML=`<div class="alert alert-error">❌ ${data.error}</div>`;}
+}
+
+async function viewUserLogs(){
+  if(!selectedUserId)return;
+  const res=await fetch('/admin/user/'+selectedUserId);
+  const data=await res.json();const u=data.user;const logs=data.logs;
+  document.getElementById('modalLogsTitle').textContent=`📜 ${u.username}`;
+  document.getElementById('modalLogsContent').innerHTML=`
+    <div class="grid grid-2" style="gap:.75rem;margin-bottom:1rem;">
+      <div class="stat-card"><div class="stat-number">${u.total_points}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--green)">${u.season_points}</div><div class="stat-label">Temporada</div></div>
+    </div>
+    <div style="font-size:.82rem;color:var(--text3);margin-bottom:.75rem;">⛏ <span class="mc-nick">${u.minecraft_nick}</span> &nbsp; 📱 <span class="badge badge-purple">${u.discord}</span> &nbsp; Rango #${data.rank}</div>
+    <div style="max-height:320px;overflow-y:auto;">
+    ${logs.length?logs.map(l=>`<div class="log-item">
+      <div style="display:flex;justify-content:space-between;"><span class="log-pts">+${l.points} PTS</span><div style="display:flex;align-items:center;gap:.5rem;"><span style="color:var(--text3);font-size:.72rem;">${l.added_at?l.added_at.slice(0,16):''}</span>
+      <button onclick="removeLog(${l.id})" style="background:rgba(255,51,85,.15);border:1px solid rgba(255,51,85,.3);color:#ff8899;border-radius:3px;padding:.1rem .4rem;cursor:pointer;font-size:.7rem;">✕</button></div></div>
+      ${l.event_name?`<div style="color:var(--gold3);font-size:.8rem;">🏆 ${l.event_name}</div>`:''}
+      ${l.position?`<div style="font-size:.8rem;color:var(--text2);">📍 #${l.position}</div>`:''}
+      ${l.reason?`<div style="font-size:.8rem;color:var(--text2);">${l.reason}</div>`:''}
+      <div style="font-size:.7rem;color:var(--text3);">Por: <span style="color:var(--gold3)">${l.added_by}</span></div>
+    </div>`).join(''):'<div style="text-align:center;color:var(--text3);padding:2rem;font-size:.8rem;letter-spacing:.15em;font-family:Orbitron,sans-serif;">SIN HISTORIAL</div>'}
+    </div>`;
+  openModal('modalUserLogs');
+}
+
+async function removeLog(logId){
+  if(!confirm('¿Eliminar este registro de puntos?'))return;
+  const res=await fetch('/admin/remove_points',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({log_id:logId})});
+  const data=await res.json();
+  if(data.success){alert('Registro eliminado. Recarga el historial.');closeModal('modalUserLogs');}
+}
+
+async function deleteUser(){
+  if(!selectedUserId)return;
+  const name=document.getElementById('searchInput').value;
+  if(!confirm(`¿Eliminar al usuario "${name}" y TODOS sus puntos? Esta acción no se puede deshacer.`))return;
+  const res=await fetch('/admin/delete_user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUserId})});
+  const data=await res.json();
+  if(data.success){alert('Usuario eliminado.');location.reload();}
+}
+
+async function createEvent(){
+  const name=document.getElementById('eventName').value.trim();
+  const date=document.getElementById('eventDate').value;
+  if(!name||!date){alert('Nombre y fecha requeridos');return;}
+  const res=await fetch('/admin/add_event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,event_date:date,description:document.getElementById('eventDesc').value})});
+  const data=await res.json();
+  if(data.success){
+    document.getElementById('eventResult').innerHTML=`<div class="alert alert-success">✅ Evento creado · ID: ${data.event_id}</div>`;
+    [document.getElementById('eventSelect'),document.getElementById('bulkEventSelect')].forEach(s=>{s.add(new Option(`${data.name} · ${data.date}`,data.event_id));});
+  }else{document.getElementById('eventResult').innerHTML=`<div class="alert alert-error">❌ ${data.error}</div>`;}
+}
+
+async function processBulk(){
+  const eventId=document.getElementById('bulkEventSelect').value;
+  if(!eventId){alert('Selecciona un evento');return;}
+  const lines=document.getElementById('bulkText').value.trim().split('\n');
+  const results=[];
+  for(const line of lines){if(!line.trim())continue;const parts=line.split(',');if(parts.length<2)continue;const pos=parseInt(parts[0].trim());const nick=parts.slice(1).join(',').trim();if(pos&&nick)results.push({position:pos,minecraft_nick:nick});}
+  if(!results.length){alert('Formato inválido. Usa: posición,nick');return;}
+  const res=await fetch('/admin/bulk_points',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_id:eventId,results})});
+  const data=await res.json();
+  let html='';
+  if(data.assigned?.length){html+=`<div class="alert alert-success">✅ <strong>${data.assigned.length}</strong> jugadores asignados<br>${data.assigned.map(a=>`&nbsp;· <span class="mc-nick">${a.nick}</span> → <strong>+${a.points} pts</strong> (#${a.position})`).join('<br>')}</div>`;}
+  if(data.not_found?.length){html+=`<div class="alert alert-error">❌ No encontrados: ${data.not_found.map(n=>`<span class="mc-nick">${n}</span>`).join(', ')}</div>`;}
+  if(data.already?.length){html+=`<div class="alert" style="background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);color:var(--gold);">⚠ Ya asignados en este evento: ${data.already.join(', ')}</div>`;}
+  document.getElementById('bulkResult').innerHTML=html;
+}
+
+async function processOCR(){
+  const file=document.getElementById('ocrFile').files[0];
+  if(!file){alert('Selecciona una imagen');return;}
+  const fd=new FormData();fd.append('image',file);
+  document.getElementById('ocrResult').innerHTML='<div style="color:var(--text2);">⏳ Analizando...</div>';
+  const res=await fetch('/admin/ocr_image',{method:'POST',body:fd});
+  const data=await res.json();
+  if(data.error){document.getElementById('ocrResult').innerHTML=`<div class="alert alert-error">❌ ${data.error}</div>`;return;}
+  ocrParsedResults=data.parsed||[];
+  document.getElementById('ocrResult').innerHTML=`<div class="alert alert-success">✅ ${ocrParsedResults.length} resultados detectados.</div>`;
+  if(ocrParsedResults.length){
+    let html='<div style="max-height:170px;overflow-y:auto;border:1px solid var(--border);border-radius:5px;">';
+    ocrParsedResults.forEach(r=>{html+=`<div style="display:flex;justify-content:space-between;padding:.35rem .7rem;border-bottom:1px solid var(--border);font-size:.82rem;"><span>#${r.position} <span class="mc-nick">${r.minecraft_nick}</span></span><span class="badge badge-gold">+${SCALE[r.position]||0}</span></div>`;});
+    html+='</div>';
+    document.getElementById('ocrParsed').innerHTML=html;
+    document.getElementById('btnApplyOCR').style.display='block';
+    document.getElementById('bulkText').value=ocrParsedResults.map(r=>`${r.position},${r.minecraft_nick}`).join('\n');
+  }
+}
+function applyOCRResults(){closeModal('modalOCR');}
+</script>
+{% endblock %}

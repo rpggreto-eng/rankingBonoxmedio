@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar Sesión — RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:1;">
+  <div style="width:100%;max-width:400px;">
+
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">⚔️</div>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold);text-shadow:0 0 30px rgba(240,192,64,.3);">ACCEDER</h1>
+      <p style="color:var(--text2);margin-top:.5rem;font-size:.95rem;">Continúa tu camino al top</p>
+    </div>
+
+    <div class="panel">
+      {% if error %}<div class="alert alert-error">⚠ {{ error }}</div>{% endif %}
+      {% if success %}<div class="alert alert-success">✓ {{ success }}</div>{% endif %}
+
+      <form method="POST">
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" name="username" required autofocus placeholder="TuUsuario">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" name="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:.5rem;padding:.7rem;">
+          ENTRAR →
+        </button>
+      </form>
+
+      <p style="margin-top:1.2rem;text-align:center;color:var(--text3);font-size:.88rem;">
+        ¿No tienes cuenta? <a href="/register" style="color:var(--gold);font-weight:600;">Regístrate →</a>
+      </p>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;">
+      <a href="/admin/login" style="color:var(--text3);font-size:.78rem;letter-spacing:.1em;text-decoration:none;text-transform:uppercase;">⚙ Acceso Administrador</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

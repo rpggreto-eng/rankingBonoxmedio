@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+{% block title %}Temporadas — RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <a href="/admin" style="color:var(--text3);font-size:.8rem;text-decoration:none;letter-spacing:.08em;">← VOLVER AL PANEL</a>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold);margin-top:.3rem;">🏆 GESTIÓN DE TEMPORADAS</h1>
+      <p style="color:var(--text3);font-size:.82rem;margin-top:.2rem;">Crea, activa y cierra temporadas fácilmente</p>
+    </div>
+    <button class="btn btn-gold" onclick="openModal('modalNewSeason')">＋ NUEVA TEMPORADA</button>
+  </div>
+
+  <!-- GUÍA RÁPIDA -->
+  <div class="panel" style="background:rgba(240,192,64,.04);border-color:rgba(240,192,64,.2);margin-bottom:1.5rem;">
+    <div class="panel-title">📖 ¿CÓMO FUNCIONA?</div>
+    <div class="grid grid-3">
+      <div style="text-align:center;padding:.75rem;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">1️⃣</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:.72rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.4rem;">CREAR</div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.5;">Crea una nueva temporada con un nombre. Aún no está activa.</div>
+      </div>
+      <div style="text-align:center;padding:.75rem;border-left:1px solid var(--border);border-right:1px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:.5rem;">2️⃣</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:.72rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.4rem;">ACTIVAR</div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.5;">Activa la temporada para que los eventos y puntos cuenten en ella.</div>
+      </div>
+      <div style="text-align:center;padding:.75rem;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">3️⃣</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:.72rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.4rem;">CERRAR</div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.5;">Cierra la temporada. Los puntos de temporada se resetean a 0. Los totales se conservan.</div>
+      </div>
+    </div>
+    <div style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:6px;font-size:.83rem;color:var(--neon);">
+      💡 <strong>Nota importante:</strong> Cerrar una temporada resetea los <strong>puntos de temporada</strong> de todos los jugadores a 0. Los <strong>puntos totales históricos</strong> se conservan siempre.
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+
+    <!-- TEMPORADA ACTIVA -->
+    <div>
+      <div class="panel" style="border-color:rgba(240,192,64,.3);">
+        <div class="panel-title">⚡ TEMPORADA ACTIVA</div>
+        {% if active %}
+        <div style="text-align:center;padding:1.5rem 0;">
+          <div style="font-size:2.5rem;margin-bottom:.5rem;">🏆</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);text-shadow:0 0 20px rgba(240,192,64,.3);">{{ active.name }}</div>
+          <div style="color:var(--text3);font-size:.8rem;margin-top:.4rem;letter-spacing:.1em;">INICIADA: {{ active.start_date[:10] if active.start_date else '—' }}</div>
+          <div style="margin-top:1.5rem;">
+            <span class="badge badge-green" style="font-size:.85rem;padding:.4rem 1rem;">✓ ACTIVA AHORA</span>
+          </div>
+        </div>
+
+        <div style="height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:1rem 0;"></div>
+
+        <!-- STATS DE TEMPORADA ACTIVA -->
+        <div id="activeStats" style="margin-bottom:1.2rem;">
+          <div style="text-align:center;color:var(--text3);font-size:.82rem;padding:.5rem;">Cargando estadísticas...</div>
+        </div>
+
+        <button class="btn btn-red" onclick="openModal('modalEndSeason')" style="width:100%;justify-content:center;">
+          🔚 CERRAR ESTA TEMPORADA
+        </button>
+        {% else %}
+        <div style="text-align:center;padding:2.5rem 1rem;">
+          <div style="font-size:3rem;margin-bottom:1rem;">😴</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:.8rem;letter-spacing:.15em;color:var(--text3);">SIN TEMPORADA ACTIVA</div>
+          <div style="color:var(--text3);margin-top:.5rem;font-size:.85rem;">Activa una temporada de la lista de abajo.</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ZONA DE PELIGRO -->
+      <div class="panel" style="border-color:rgba(255,51,85,.2);">
+        <div class="panel-title" style="color:var(--red);">⚠ ZONA DE PELIGRO</div>
+        <div style="background:rgba(255,51,85,.05);border:1px solid rgba(255,51,85,.15);border-radius:6px;padding:1rem;margin-bottom:1rem;">
+          <div style="font-weight:700;color:#ff8899;margin-bottom:.4rem;">Reset Total Completo</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.5;">Borra <strong>TODOS</strong> los puntos (totales + temporada) y <strong>TODOS</strong> los logs de puntos de todos los jugadores. Los usuarios no se borran.</div>
+        </div>
+        <button class="btn btn-red btn-sm" onclick="openModal('modalResetAll')" style="width:100%;justify-content:center;">
+          💀 RESET TOTAL (IRREVERSIBLE)
+        </button>
+      </div>
+    </div>
+
+    <!-- LISTA DE TEMPORADAS -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">📋 TODAS LAS TEMPORADAS</div>
+        {% if seasons %}
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          {% for s in seasons %}
+          <div style="background:rgba(0,0,0,.3);border:1px solid {% if s.is_active %}rgba(240,192,64,.3){% else %}var(--border){% endif %};border-radius:8px;padding:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+              <div>
+                <div style="font-family:'Orbitron',sans-serif;font-weight:700;font-size:.95rem;{% if s.is_active %}color:var(--gold);{% endif %}">
+                  {{ s.name }}
+                  {% if s.is_active %}<span class="badge badge-green" style="margin-left:.5rem;font-size:.65rem;">ACTIVA</span>{% endif %}
+                </div>
+                <div style="font-size:.75rem;color:var(--text3);margin-top:.2rem;">
+                  Inicio: {{ s.start_date[:10] if s.start_date else '—' }}
+                  {% if s.end_date %} · Fin: {{ s.end_date[:10] }}{% endif %}
+                </div>
+              </div>
+              <div style="display:flex;gap:.4rem;align-items:center;">
+                <button onclick="viewSeasonStats({{ s.id }}, '{{ s.name }}')" class="btn btn-outline btn-sm">📊</button>
+                {% if not s.is_active and not s.end_date %}
+                <button onclick="activateSeason({{ s.id }}, '{{ s.name }}')" class="btn btn-gold btn-sm">ACTIVAR</button>
+                {% elif s.end_date %}
+                <span class="badge badge-red" style="font-size:.65rem;">CERRADA</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text3);padding:2rem;font-size:.85rem;">Sin temporadas creadas</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Nueva temporada -->
+<div class="modal-overlay" id="modalNewSeason">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">🏆 CREAR NUEVA TEMPORADA</div>
+    <div class="form-group">
+      <label>Nombre de la Temporada *</label>
+      <input type="text" id="newSeasonName" placeholder="Ej: Temporada 2, Season 2025...">
+    </div>
+    <div style="background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:.75rem;margin-bottom:1rem;font-size:.82rem;color:var(--neon);">
+      💡 La temporada se crea como <strong>inactiva</strong>. Debes activarla manualmente cuando quieras que empiece.
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalNewSeason')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-gold" onclick="createSeason()" style="flex:1;justify-content:center;">CREAR →</button>
+    </div>
+    <div id="newSeasonResult" style="margin-top:.5rem;"></div>
+  </div>
+</div>
+
+<!-- MODAL: Cerrar temporada -->
+<div class="modal-overlay" id="modalEndSeason">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title" style="color:var(--red);">🔚 CERRAR TEMPORADA ACTIVA</div>
+
+    {% if active %}
+    <div style="background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.25);border-radius:6px;padding:1rem;margin-bottom:1.2rem;">
+      <div style="font-weight:700;color:#ff8899;margin-bottom:.3rem;">¿Qué va a pasar?</div>
+      <div style="font-size:.85rem;color:var(--text2);line-height:1.6;">
+        ✓ La temporada <strong style="color:var(--gold);">{{ active.name }}</strong> se marcará como cerrada<br>
+        ✓ Los <strong>puntos de temporada</strong> de todos se resetean a 0<br>
+        ✓ Los <strong>puntos totales históricos</strong> se conservan<br>
+        ✓ Puedes activar otra temporada inmediatamente
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Activar siguiente temporada (opcional)</label>
+      <select id="nextSeasonSelect">
+        <option value="">— No activar ninguna por ahora —</option>
+        {% for s in seasons %}
+          {% if not s.is_active and not s.end_date %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalEndSeason')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-red" onclick="endSeason()" style="flex:1;justify-content:center;">🔚 CERRAR TEMPORADA</button>
+    </div>
+    <div id="endSeasonResult" style="margin-top:.5rem;"></div>
+  </div>
+</div>
+
+<!-- MODAL: Stats de temporada -->
+<div class="modal-overlay" id="modalSeasonStats">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-title" id="statsTitle">ESTADÍSTICAS</div>
+    <div id="statsContent"><div style="text-align:center;color:var(--text3);padding:2rem;">Cargando...</div></div>
+    <button class="btn btn-outline" onclick="closeModal('modalSeasonStats')" style="margin-top:1rem;width:100%;justify-content:center;">CERRAR</button>
+  </div>
+</div>
+
+<!-- MODAL: Reset total -->
+<div class="modal-overlay" id="modalResetAll">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title" style="color:var(--red);">💀 RESET TOTAL</div>
+    <div style="background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);border-radius:6px;padding:1rem;margin-bottom:1.2rem;">
+      <div style="font-weight:700;color:#ff8899;font-size:1rem;margin-bottom:.5rem;">⚠ ACCIÓN IRREVERSIBLE</div>
+      <div style="font-size:.85rem;color:var(--text2);line-height:1.6;">
+        Esto borrará <strong>TODOS</strong> los puntos totales, puntos de temporada y el historial completo de puntos de todos los jugadores.<br><br>
+        <strong style="color:#ff8899;">Los usuarios NO se borran.</strong>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Escribe <strong style="color:var(--red);">RESET</strong> para confirmar</label>
+      <input type="text" id="resetConfirm" placeholder="RESET" style="border-color:rgba(255,51,85,.3);">
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalResetAll')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-red" onclick="resetAll()" style="flex:1;justify-content:center;">💀 CONFIRMAR RESET</button>
+    </div>
+    <div id="resetResult" style="margin-top:.5rem;"></div>
+  </div>
+</div>
+
+<script>
+// Cargar stats de la temporada activa al abrir
+{% if active %}
+window.addEventListener('DOMContentLoaded', () => loadActiveStats({{ active.id }}));
+const ACTIVE_ID = {{ active.id }};
+{% else %}
+const ACTIVE_ID = null;
+{% endif %}
+
+async function loadActiveStats(id) {
+  const res = await fetch('/admin/seasons/stats/' + id);
+  const data = await res.json();
+  const el = document.getElementById('activeStats');
+  if (!data.top || !data.top.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:.82rem;padding:.5rem;">Sin puntos esta temporada aún</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">TOP JUGADORES ESTA TEMPORADA</div>
+    ${data.top.slice(0,5).map((u,i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          <span style="font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--text3);width:18px;">${i+1}</span>
+          <span style="font-weight:600;font-size:.88rem;">${u.username}</span>
+        </div>
+        <span style="font-family:'Orbitron',sans-serif;font-weight:700;color:var(--green);font-size:.88rem;">${u.season_points} pts</span>
+      </div>
+    `).join('')}
+    <div style="text-align:right;margin-top:.5rem;font-size:.75rem;color:var(--text3);">Total distribuido esta temporada: <strong style="color:var(--gold);">${data.total_pts} pts</strong></div>
+  `;
+}
+
+async function createSeason() {
+  const name = document.getElementById('newSeasonName').value.trim();
+  if (!name) { alert('Escribe un nombre'); return; }
+  const res = await fetch('/admin/seasons/create', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  });
+  const data = await res.json();
+  const el = document.getElementById('newSeasonResult');
+  if (data.success) {
+    el.innerHTML = `<div class="alert alert-success">✅ Temporada "${data.name}" creada. Recarga la página para verla.</div>`;
+    setTimeout(() => location.reload(), 1500);
+  } else {
+    el.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+  }
+}
+
+async function activateSeason(id, name) {
+  if (!confirm(`¿Activar "${name}"?\n\nEsto desactivará la temporada actual (sin resetear puntos).`)) return;
+  const res = await fetch('/admin/seasons/activate', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({season_id: id})
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert(`✅ "${name}" ahora está activa.`);
+    location.reload();
+  }
+}
+
+async function endSeason() {
+  const nextId = document.getElementById('nextSeasonSelect')?.value || null;
+  if (!confirm('¿Confirmas cerrar la temporada activa?\n\nLos puntos de temporada se resetearán a 0.')) return;
+  const res = await fetch('/admin/seasons/end', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({current_id: ACTIVE_ID, new_season_id: nextId || null})
+  });
+  const data = await res.json();
+  const el = document.getElementById('endSeasonResult');
+  if (data.success) {
+    el.innerHTML = `<div class="alert alert-success">✅ Temporada cerrada. ${data.players_reset} jugadores reseteados.</div>`;
+    setTimeout(() => location.reload(), 1800);
+  } else {
+    el.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+  }
+}
+
+async function viewSeasonStats(id, name) {
+  document.getElementById('statsTitle').textContent = `📊 ${name}`;
+  document.getElementById('statsContent').innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;">Cargando...</div>';
+  openModal('modalSeasonStats');
+  const res = await fetch('/admin/seasons/stats/' + id);
+  const data = await res.json();
+  document.getElementById('statsContent').innerHTML = `
+    <div class="grid grid-2" style="gap:.75rem;margin-bottom:1rem;">
+      <div class="stat-card"><div class="stat-number">${data.total_pts}</div><div class="stat-label">Puntos Repartidos</div></div>
+      <div class="stat-card"><div class="stat-number">${data.top.length}</div><div class="stat-label">Jugadores con Pts</div></div>
+    </div>
+    <div style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">RANKING DE LA TEMPORADA</div>
+    <div style="max-height:320px;overflow-y:auto;">
+      ${data.top.length ? data.top.map((u,i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem .75rem;border-bottom:1px solid var(--border);${i<3?'background:rgba(240,192,64,.03);':''}">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <span style="font-family:'Orbitron',sans-serif;font-size:.78rem;color:${i===0?'var(--gold)':i===1?'#b0b0b0':i===2?'#cd7f32':'var(--text3)'};width:22px;font-weight:900;">${i+1}</span>
+            <div>
+              <div style="font-weight:600;font-size:.9rem;">${u.username}</div>
+              <div style="font-size:.72rem;color:var(--text3);">⛏ ${u.minecraft_nick}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Orbitron',sans-serif;font-weight:700;color:var(--green);">${u.season_points} pts</div>
+            <div style="font-size:.7rem;color:var(--text3);">Total: ${u.total_points}</div>
+          </div>
+        </div>
+      `).join('') : '<div style="text-align:center;color:var(--text3);padding:2rem;font-size:.85rem;">Sin puntos esta temporada</div>'}
+    </div>
+  `;
+}
+
+async function resetAll() {
+  const confirm_text = document.getElementById('resetConfirm').value.trim();
+  const res = await fetch('/admin/seasons/reset_all', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({confirm: confirm_text})
+  });
+  const data = await res.json();
+  const el = document.getElementById('resetResult');
+  if (data.success) {
+    el.innerHTML = `<div class="alert alert-success">✅ Reset completo realizado.</div>`;
+    setTimeout(() => location.reload(), 1800);
+  } else {
+    el.innerHTML = `<div class="alert alert-error">❌ ${data.error || 'Confirmación incorrecta. Escribe RESET exacto.'}</div>`;
+  }
+}
+</script>
+{% endblock %}

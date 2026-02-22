@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+
+<div style="position:relative;z-index:1;padding:5rem 2rem 3.5rem;text-align:center;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 70%,rgba(240,192,64,.05) 0%,transparent 65%);pointer-events:none;"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:550px;height:550px;border:1px solid rgba(240,192,64,.05);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:350px;height:350px;border:1px solid rgba(240,192,64,.07);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:relative;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.5em;color:var(--text3);text-transform:uppercase;margin-bottom:.75rem;">
+      {% if season %}{{ season.name }}{% else %}TEMPORADA ACTIVA{% endif %}
+    </div>
+    <h1 style="font-family:'Orbitron',sans-serif;font-size:clamp(2rem,5vw,3.8rem);font-weight:900;line-height:1.05;margin-bottom:.75rem;">
+      <span style="color:var(--gold);text-shadow:0 0 40px rgba(240,192,64,.35);">ARENA</span>
+      <span style="color:var(--text);display:block;font-size:.55em;letter-spacing:.22em;opacity:.65;">RANKING SYSTEM</span>
+    </h1>
+    <p style="color:var(--text2);font-size:1rem;max-width:440px;margin:0 auto 2rem;line-height:1.6;">Compite en eventos, gana puntos y demuestra quién domina la arena.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/ranking" class="btn btn-gold">🏆 VER RANKING</a>
+      {% if not session.get('user_id') %}<a href="/register" class="btn btn-outline">✦ CREAR CUENTA</a>
+      {% else %}<a href="/profile" class="btn btn-neon">👤 MI PERFIL</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- STATS -->
+  <div class="grid grid-3" style="margin-bottom:1.5rem;">
+    <div class="stat-card fade-up"><div class="stat-number">{{ total_users }}</div><div class="stat-label">Jugadores</div></div>
+    <div class="stat-card fade-up" style="animation-delay:.05s;"><div class="stat-number">{{ total_events }}</div><div class="stat-label">Eventos</div></div>
+    <div class="stat-card fade-up" style="animation-delay:.1s;">
+      <div class="stat-number" style="font-size:1rem;color:var(--neon);">{% if season %}{{ season.name }}{% else %}—{% endif %}</div>
+      <div class="stat-label">Temporada Activa</div>
+    </div>
+  </div>
+
+  <!-- TOP 10 -->
+  <div class="panel fade-up" style="animation-delay:.1s;">
+    <div class="panel-title">🏅 TOP 10 JUGADORES</div>
+    <table>
+      <thead><tr><th style="width:60px;">#</th><th>Jugador</th><th>Discord</th><th>Minecraft</th><th style="text-align:right;">Puntos</th></tr></thead>
+      <tbody>
+        {% for u in users[:10] %}
+        <tr style="animation:fadeup .3s ease both;animation-delay:{{ loop.index * 0.04 }}s;">
+          <td>{% if loop.index==1 %}<span class="rank-badge r1">1</span>{% elif loop.index==2 %}<span class="rank-badge r2">2</span>{% elif loop.index==3 %}<span class="rank-badge r3">3</span>{% else %}<span class="rank-badge rn">{{ loop.index }}</span>{% endif %}</td>
+          <td><strong style="font-size:1rem;">{{ u.username }}</strong></td>
+          <td><span class="badge badge-purple">{{ u.discord }}</span></td>
+          <td><span class="mc-nick">{{ u.minecraft_nick }}</span></td>
+          <td style="text-align:right;"><span class="pts-display">{{ u.total_points }}</span> <span style="color:var(--text3);font-size:.78rem;">pts</span></td>
+        </tr>
+        {% endfor %}
+        {% if not users %}<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:3rem;font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:.2em;">SIN JUGADORES AÚN</td></tr>{% endif %}
+      </tbody>
+    </table>
+    {% if users|length > 10 %}<div style="text-align:center;margin-top:1rem;"><a href="/ranking" class="btn btn-outline btn-sm">VER RANKING COMPLETO →</a></div>{% endif %}
+  </div>
+
+  <!-- ESCALA -->
+  <div class="panel fade-up" style="animation-delay:.15s;">
+    <div class="panel-title">📊 ESCALA DE PUNTOS</div>
+    <div class="grid grid-4">
+      <div class="stat-card"><div style="font-size:1.4rem;margin-bottom:.2rem;">🥇</div><div class="stat-number" style="font-size:2rem;">25</div><div class="stat-label">1° LUGAR</div></div>
+      <div class="stat-card"><div style="font-size:1.4rem;margin-bottom:.2rem;">🥈</div><div class="stat-number" style="font-size:2rem;color:#b0b0b0;">15</div><div class="stat-label">2° LUGAR</div></div>
+      <div class="stat-card"><div style="font-size:1.4rem;margin-bottom:.2rem;">🥉</div><div class="stat-number" style="font-size:2rem;color:#cd7f32;">12</div><div class="stat-label">3° LUGAR</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--text2);">10</div><div class="stat-label">4° LUGAR</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--text2);">5</div><div class="stat-label">5° — 8°</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--text2);">4</div><div class="stat-label">9° — 15°</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--text2);">3</div><div class="stat-label">16° — 31°</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--text2);">2</div><div class="stat-label">32° — 64°</div></div>
+    </div>
+    <div style="text-align:center;margin-top:1rem;color:var(--text3);font-size:.8rem;letter-spacing:.08em;">65° — 128° reciben <strong style="color:var(--text2);">1 punto</strong></div>
+  </div>
+</div>
+{% endblock %}

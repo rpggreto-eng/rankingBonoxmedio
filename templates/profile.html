@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Perfil — {{ user.username }}{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:2rem;">
+  <div class="grid grid-2">
+
+    <!-- LEFT: Card perfil -->
+    <div>
+      <div class="panel" style="text-align:center;padding:2.5rem 1.5rem;">
+        <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--gold3),var(--gold));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;color:#000;box-shadow:0 0 28px rgba(240,192,64,.3);">
+          {{ user.username[0].upper() }}
+        </div>
+        <h2 style="font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;">{{ user.username }}</h2>
+        <div style="color:var(--text3);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;margin:.3rem 0 1.2rem;">
+          RANGO #{{ rank }} de {{ total_users }}
+        </div>
+        <div class="grid grid-2" style="gap:.75rem;margin-bottom:1.5rem;">
+          <div class="stat-card"><div class="stat-number">{{ user.total_points }}</div><div class="stat-label">Total</div></div>
+          <div class="stat-card"><div class="stat-number" style="color:var(--green);">{{ user.season_points }}</div><div class="stat-label">Temporada</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;text-align:left;margin-bottom:1.5rem;">
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;">
+            <div style="font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:.25rem;">📱 Discord</div>
+            <span class="badge badge-purple">{{ user.discord }}</span>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;">
+            <div style="font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:.25rem;">⛏ Minecraft Nick</div>
+            <span class="mc-nick">{{ user.minecraft_nick }}</span>
+          </div>
+          {% if user.email %}
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;">
+            <div style="font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:.25rem;">📧 Email</div>
+            <span style="color:var(--text2);font-size:.9rem;">{{ user.email }}</span>
+          </div>
+          {% endif %}
+        </div>
+        <button class="btn btn-outline" onclick="openModal('modalEdit')" style="width:100%;justify-content:center;">✏ EDITAR PERFIL</button>
+        <button class="btn btn-outline" onclick="openModal('modalPwd')" style="width:100%;justify-content:center;margin-top:.5rem;">🔑 CAMBIAR CONTRASEÑA</button>
+        <div style="margin-top:1.2rem;color:var(--text3);font-size:.72rem;letter-spacing:.08em;">MIEMBRO DESDE {{ user.created_at[:10] if user.created_at else '—' }}</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Historial -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">📜 HISTORIAL DE PUNTOS</div>
+        {% if logs %}
+        <div style="max-height:540px;overflow-y:auto;">
+          {% for log in logs %}
+          <div class="log-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;">
+              <span class="log-pts">+{{ log.points }} PTS</span>
+              <span style="color:var(--text3);font-size:.72rem;font-family:'JetBrains Mono',monospace;">{{ log.added_at[:16] if log.added_at else '' }}</span>
+            </div>
+            {% if log.event_name %}<div style="color:var(--gold3);font-size:.83rem;">🏆 {{ log.event_name }}</div>{% endif %}
+            {% if log.position %}<div style="color:var(--text2);font-size:.83rem;">📍 Posición #{{ log.position }}</div>{% endif %}
+            {% if log.reason %}<div style="color:var(--text2);font-size:.83rem;">{{ log.reason }}</div>{% endif %}
+            <div style="color:var(--text3);font-size:.72rem;margin-top:.15rem;">Por: <span style="color:var(--gold3);">{{ log.added_by }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem 1rem;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:.72rem;letter-spacing:.15em;color:var(--text3);">SIN PUNTOS AÚN</div>
+          <div style="color:var(--text3);margin-top:.5rem;font-size:.88rem;">Participa en eventos para aparecer en el ranking.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar perfil -->
+<div class="modal-overlay" id="modalEdit">
+  <div class="modal">
+    <div class="modal-title">✏ EDITAR PERFIL</div>
+    <div class="form-group">
+      <label>Nick Minecraft</label>
+      <input type="text" id="editMC" value="{{ user.minecraft_nick }}" placeholder="TuNickExacto">
+    </div>
+    <div class="form-group">
+      <label>Email <span style="color:var(--text3);font-size:.75em;">(opcional)</span></label>
+      <input type="email" id="editEmail" value="{{ user.email or '' }}" placeholder="correo@ejemplo.com">
+    </div>
+    <div id="editError" style="margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalEdit')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-gold" onclick="saveEdit()" style="flex:1;justify-content:center;">GUARDAR →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cambiar contraseña -->
+<div class="modal-overlay" id="modalPwd">
+  <div class="modal">
+    <div class="modal-title">🔑 CAMBIAR CONTRASEÑA</div>
+    <div class="form-group">
+      <label>Contraseña Actual</label>
+      <input type="password" id="oldPwd" placeholder="••••••••">
+    </div>
+    <div class="form-group">
+      <label>Nueva Contraseña</label>
+      <input type="password" id="newPwd" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div id="pwdError" style="margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="btn btn-outline" onclick="closeModal('modalPwd')" style="flex:1;justify-content:center;">CANCELAR</button>
+      <button class="btn btn-gold" onclick="savePwd()" style="flex:1;justify-content:center;">CAMBIAR →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function saveEdit(){
+  const fd = new FormData();
+  fd.append('minecraft_nick', document.getElementById('editMC').value);
+  fd.append('email', document.getElementById('editEmail').value);
+  const res = await fetch('/profile/edit', {method:'POST', body:fd});
+  const data = await res.json();
+  const el = document.getElementById('editError');
+  if(data.success){
+    el.innerHTML='<div class="alert alert-success">✅ Perfil actualizado. Recarga la página.</div>';
+  } else {
+    el.innerHTML=`<div class="alert alert-error">❌ ${data.error}</div>`;
+  }
+}
+async function savePwd(){
+  const fd = new FormData();
+  fd.append('old_password', document.getElementById('oldPwd').value);
+  fd.append('new_password', document.getElementById('newPwd').value);
+  const res = await fetch('/profile/change_password', {method:'POST', body:fd});
+  const data = await res.json();
+  const el = document.getElementById('pwdError');
+  if(data.success){
+    el.innerHTML='<div class="alert alert-success">✅ Contraseña cambiada exitosamente.</div>';
+  } else {
+    el.innerHTML=`<div class="alert alert-error">❌ ${data.error}</div>`;
+  }
+}
+</script>
+{% endblock %}

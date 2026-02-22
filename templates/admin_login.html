@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Admin — RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:1;">
+  <div style="width:100%;max-width:380px;">
+
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,rgba(240,192,64,.1),rgba(240,192,64,.2));border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.8rem;">⚙</div>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;color:var(--gold);">PANEL ADMIN</h1>
+      <p style="color:var(--text3);font-size:.82rem;margin-top:.4rem;letter-spacing:.1em;text-transform:uppercase;">Acceso Restringido</p>
+    </div>
+
+    <div class="panel">
+      {% if error %}<div class="alert alert-error">⚠ {{ error }}</div>{% endif %}
+
+      <form method="POST">
+        <div class="form-group">
+          <label>Usuario Admin</label>
+          <input type="text" name="username" required autofocus placeholder="admin1 — admin13">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" name="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;padding:.7rem;margin-top:.25rem;">
+          ⚙ ACCEDER AL PANEL
+        </button>
+      </form>
+
+      <div style="margin-top:1.2rem;padding:.75rem 1rem;background:rgba(240,192,64,.04);border:1px solid rgba(240,192,64,.1);border-radius:4px;font-size:.78rem;color:var(--text3);">
+        Contraseña por defecto: <code style="color:var(--gold3);">Admin123!</code><br>
+        Cámbiala en producción via SQLite.
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:1rem;">
+      <a href="/login" style="color:var(--text3);font-size:.78rem;text-decoration:none;">← Volver al login de usuarios</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

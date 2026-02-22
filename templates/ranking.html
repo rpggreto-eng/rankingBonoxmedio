@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Ranking Global — RANKING EVENTIFYstudio{% endblock %}
+{% block content %}
+<div class="container">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);">🏆 RANKING GLOBAL</h1>
+      <p style="color:var(--text3);font-size:.85rem;margin-top:.25rem;">{{ users|length }} jugadores registrados</p>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <input type="text" id="searchRanking" placeholder="Buscar jugador..." style="width:220px;">
+      {% if session.get('admin_id') %}
+      <a href="/admin/export_ranking" class="btn btn-outline btn-sm">📥 EXPORTAR CSV</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <table id="rankingTable">
+      <thead>
+        <tr>
+          <th style="width:70px;">RANK</th>
+          <th>JUGADOR</th>
+          <th>DISCORD</th>
+          <th>MINECRAFT</th>
+          <th style="text-align:right;">PTS TOTAL</th>
+          <th style="text-align:right;">TEMP.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr style="animation:fadeup .3s ease both;animation-delay:{{ [loop.index * 0.02, 0.5]|min }}s;">
+          <td>
+            {% if loop.index == 1 %}<span class="rank-badge r1">1</span>
+            {% elif loop.index == 2 %}<span class="rank-badge r2">2</span>
+            {% elif loop.index == 3 %}<span class="rank-badge r3">3</span>
+            {% elif loop.index <= 10 %}<span class="rank-badge rn" style="color:var(--gold3);">{{ loop.index }}</span>
+            {% else %}<span class="rank-badge rn">{{ loop.index }}</span>
+            {% endif %}
+          </td>
+          <td><strong style="font-size:1rem;">{{ u.username }}</strong></td>
+          <td><span class="badge badge-purple">{{ u.discord }}</span></td>
+          <td><span class="mc-nick">{{ u.minecraft_nick }}</span></td>
+          <td style="text-align:right;"><span class="pts-display">{{ u.total_points }}</span> <span style="color:var(--text3);font-size:.78rem;">pts</span></td>
+          <td style="text-align:right;"><span style="color:var(--green);font-weight:600;">{{ u.season_points }}</span> <span style="color:var(--text3);font-size:.78rem;">pts</span></td>
+        </tr>
+        {% endfor %}
+        {% if not users %}
+        <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:4rem;font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:.2em;">SIN JUGADORES REGISTRADOS</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.getElementById('searchRanking').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#rankingTable tbody tr').forEach(row=>{
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
